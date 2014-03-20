@@ -1,7 +1,7 @@
-domformatter
+dom-formatter
 ============
 
-domformatter
+dom-formatter
 
 version 0.0.1
 
