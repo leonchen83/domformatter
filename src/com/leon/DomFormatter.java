@@ -1,5 +1,8 @@
 package com.leon;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author : Leon
  * @since : 2014-3-19
@@ -11,6 +14,7 @@ public class DomFormatter {
 	private int tab_count = 0;
 	private int index = 0;
 	private char[] c;
+	private List<String> label_stack = new ArrayList<String>();
 
 	public DomFormatter(String fileName, Class<?> clazz) {
 		String str = FileUtils.readFile(fileName, clazz);
@@ -18,8 +22,9 @@ public class DomFormatter {
 	}
 
 	public static void main(String[] args) {
-		DomFormatter formatter = new DomFormatter("test1.txt", DomFormatter.class);
+		DomFormatter formatter = new DomFormatter("test2.txt", DomFormatter.class);
 		formatter.format();
+		System.out.println(formatter.label_stack);
 	}
 
 	public void format() {
@@ -46,6 +51,7 @@ public class DomFormatter {
 					print("\n", "<" + label, tab_count);
 					plus_plus();
 					ignore_white_space();
+					push(label);
 					label_attr();
 				}
 			} else if (current() == '/') {
@@ -55,6 +61,9 @@ public class DomFormatter {
 					String label_end = word(current());
 					minus_minus();
 					print("\n", "</" + label_end + ">", tab_count);
+					if (top().equals(label_end.toLowerCase())) {
+						pop();
+					}
 				}
 				ignore_white_space();
 				if (current() == '>') {
@@ -92,6 +101,12 @@ public class DomFormatter {
 					arrt_value(current());
 					label_attr();
 				}
+			} else {
+				if (is_minimized_attr(attr)) {
+					label_attr();
+				} else {
+					throw new UnsupportedOperationException("missing attr_value,attr is '" + attr + "',index is " + index);
+				}
 			}
 		} else if (current() == '/') {
 			eat();
@@ -101,6 +116,7 @@ public class DomFormatter {
 				eat();
 				print(">");
 				minus_minus();
+				pop();
 				label_content();
 			}
 		} else if (current() == '>') {
@@ -188,6 +204,16 @@ public class DomFormatter {
 
 	private boolean is_word(char c) {
 		return Character.isLetter(c) || c == '-' || (c >= '0' && c <= '9') || c == '_' || c == ':' || c == '#';
+	}
+
+	private boolean is_minimized_attr(String attr) {
+		String[] attrs = new String[] { "compact", "checked", "declare", "readonly", "disabled", "selected", "defer", "ismap", "nohref", "noshade", "nowrap", "multiple", "noresize", "allowfullscreen" };
+		for (int i = 0; i < attrs.length; i++) {
+			if (attr.toLowerCase().equals(attrs[i])) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private String word(char d) {
@@ -282,5 +308,19 @@ public class DomFormatter {
 
 	private void minus_minus() {
 		tab_count--;
+	}
+
+	private void push(String str) {
+		label_stack.add(0, str.toLowerCase());
+	}
+
+	private String pop() {
+		String str = top();
+		label_stack.remove(0);
+		return str;
+	}
+
+	private String top() {
+		return label_stack.get(0);
 	}
 }
