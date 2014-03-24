@@ -173,6 +173,7 @@ public class DomFormatter {
 					print("script>\n");
 				}
 			} else {
+				print(word);
 				ignore_script();
 			}
 		} else {
