@@ -39,7 +39,21 @@ public class DomFormatter {
 			if (current() == '!') {
 				eat();
 				print("\n", "<!", tab_count);
-				ignore_comment();
+				ignore_white_space();
+				if (current() == '-') {
+					print(current());
+					eat();
+					ignore_white_space();
+					if (current() == '-') {
+						print(current());
+						eat();
+						ignore_comment();
+					} else {
+						throw new UnsupportedOperationException("parsing comment error. expect '-' but " + current());
+					}
+				} else {
+					ignore_doctype();
+				}
 				label();
 			} else if (is_word(current())) {
 				String label = word(current());
@@ -61,8 +75,12 @@ public class DomFormatter {
 					String label_end = word(current());
 					minus_minus();
 					print("\n", "</" + label_end + ">", tab_count);
-					if (top().equals(label_end.toLowerCase())) {
+					String label_start = top();
+					if (is_equal(label_start, label_end)) {
 						pop();
+					} else {
+						String message = get_error_message(label_end, label_start);
+						throw new UnsupportedOperationException(message.toString());
 					}
 				}
 				ignore_white_space();
@@ -172,6 +190,33 @@ public class DomFormatter {
 	}
 
 	private void ignore_comment() {
+		while (current() != '-') {
+			if (current() == '\n') {
+				eat();
+				continue;
+			}
+			print(current());
+			eat();
+		}
+		print(current());
+		eat();
+		ignore_white_space();
+		if (current() == '-') {
+			print(current());
+			eat();
+			ignore_white_space();
+			if (current() == '>') {
+				print(current());
+				eat();
+			} else {
+				ignore_comment();
+			}
+		} else {
+			ignore_comment();
+		}
+	}
+
+	private void ignore_doctype() {
 		while (current() != '>') {
 			ignore_double_quote_and_single_quote();
 			if (current() == '\n') {
@@ -212,6 +257,16 @@ public class DomFormatter {
 			if (attr.toLowerCase().equals(attrs[i])) {
 				return true;
 			}
+		}
+		return false;
+	}
+
+	private boolean is_equal(String a, String b) {
+		if (a == null || b == null) {
+			return false;
+		}
+		if (a.toLowerCase().equals(b.toLowerCase())) {
+			return true;
 		}
 		return false;
 	}
@@ -310,17 +365,33 @@ public class DomFormatter {
 		tab_count--;
 	}
 
+	private String get_error_message(String label_end, String label_start) {
+		StringBuffer message = new StringBuffer();
+		message.append("missing label_end:</" + label_end + ">");
+		if (label_start != null) {
+			message.append(",or missing label_start:<" + label_start + ">");
+		}
+		return message.toString();
+	}
+
 	private void push(String str) {
 		label_stack.add(0, str.toLowerCase());
 	}
 
 	private String pop() {
-		String str = top();
-		label_stack.remove(0);
-		return str;
+		if (!label_stack.isEmpty()) {
+			String str = top();
+			label_stack.remove(0);
+			return str;
+		}
+		return null;
 	}
 
 	private String top() {
-		return label_stack.get(0);
+		if (!label_stack.isEmpty()) {
+			return label_stack.get(0);
+		}
+		return null;
 	}
+
 }
