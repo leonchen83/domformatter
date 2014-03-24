@@ -24,7 +24,6 @@ public class DomFormatter {
 	public static void main(String[] args) {
 		DomFormatter formatter = new DomFormatter("test2.txt", DomFormatter.class);
 		formatter.format();
-		System.out.println(formatter.label_stack);
 	}
 
 	public void format() {
@@ -49,11 +48,12 @@ public class DomFormatter {
 						eat();
 						ignore_comment();
 					} else {
-						throw new UnsupportedOperationException("parsing comment error. expect '-' but " + current());
+						throw new UnsupportedOperationException("parsing comment error. expect '-' but '" + current()+"'");
 					}
 				} else {
 					ignore_doctype();
 				}
+				ignore_white_space();
 				label();
 			} else if (is_word(current())) {
 				String label = word(current());
@@ -94,7 +94,7 @@ public class DomFormatter {
 				}
 			}
 		} else {
-			throw new UnsupportedOperationException("char is " + current() + ",index is " + index);
+			throw new UnsupportedOperationException("char is '" + current() + "',index is " + index);
 		}
 
 	}
